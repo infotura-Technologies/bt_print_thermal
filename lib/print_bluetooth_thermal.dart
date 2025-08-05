@@ -17,11 +17,16 @@ class PrintBluetoothThermal {
   static bool _isWeightListeningStarted = false;
 
   /// Start listening to Bluetooth data from the weighing machine
-  static void startListeningToWeight() {
-    if (_isWeightListeningStarted) return; // Avoid re-listening
-    _isWeightListeningStarted = true;
+  /// Returns true if listener was successfully started, false otherwise
+  static Future<bool> startListeningToWeight() async {
+    if (_isWeightListeningStarted) return true; // Already started
 
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (!(Platform.isAndroid || Platform.isIOS)) {
+      print("startListeningToWeight is only supported on Android/iOS");
+      return false;
+    }
+
+    try {
       _channel.setMethodCallHandler((call) async {
         if (call.method == 'onDataReceived') {
           try {
@@ -34,6 +39,12 @@ class PrintBluetoothThermal {
           }
         }
       });
+
+      _isWeightListeningStarted = true;
+      return true;
+    } catch (e) {
+      print("Failed to start listening to weight: $e");
+      return false;
     }
   }
 
