@@ -14,15 +14,24 @@ class PrintBluetoothThermal {
   /// Stream to listen for weight data
   static Stream<String> get weightStream => _dataStreamController.stream;
 
+  static bool _isWeightListeningStarted = false;
+
   /// Start listening to Bluetooth data from the weighing machine
   static void startListeningToWeight() {
+    if (_isWeightListeningStarted) return; // Avoid re-listening
+    _isWeightListeningStarted = true;
+
     if (Platform.isAndroid || Platform.isIOS) {
       _channel.setMethodCallHandler((call) async {
         if (call.method == 'onDataReceived') {
-          final Uint8List data = call.arguments;
-          final String raw = String.fromCharCodes(data);
-          print("Received from scale: $raw");
-          _dataStreamController.add(raw);
+          try {
+            final Uint8List data = call.arguments;
+            final String raw = String.fromCharCodes(data).trim();
+
+            _dataStreamController.add(raw);
+          } catch (e) {
+            print("Error parsing weight data: $e");
+          }
         }
       });
     }
