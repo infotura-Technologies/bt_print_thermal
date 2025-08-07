@@ -136,35 +136,33 @@ class PrintBluetoothThermalPlugin: FlutterPlugin, MethodCallHandler{
         //Log.d(TAG, "no paso es false ")
       }
     } else if (call.method == "connect") {
-      var macimpresora = call.arguments.toString();
-      //Log.d(TAG, "coneccting kt: mac: "+macimpresora);
-      if(macimpresora.length>0){
-        mac = macimpresora;
-      }else{
-        result.success(false)
-      }
-      GlobalScope.launch(Dispatchers.Main) {
-        if (outputStream == null || inputStream == null) {
-   bluetoothSocket = connect()
-            if (bluetoothSocket != null) {
-        outputStream = bluetoothSocket?.outputStream
-                inputStream = bluetoothSocket?.inputStream
-                result.success(true) //  Call connect() only once
-       // Log.d(TAG, "Connected successfully. OutputStream and InputStream initialized.")
+    val macimpresora = call.arguments.toString()
+
+    if (macimpresora.isNotEmpty()) {
+        mac = macimpresora
     } else {
         result.success(false)
-       // Log.e(TAG, "Connection failed. Socket is null.")
+        return
     }
-} else {
-    result.success(true)  // Already connected
-}
-else{
-          //Log.d(TAG, "stream null kt: ")
-          outputStream == null;
-          result.success(false)
+
+    GlobalScope.launch(Dispatchers.Main) {
+        if (outputStream == null || inputStream == null) {
+            bluetoothSocket = connect()
+            if (bluetoothSocket != null) {
+                outputStream = bluetoothSocket?.outputStream
+                inputStream = bluetoothSocket?.inputStream
+                result.success(true) // Connected successfully
+                // Log.d(TAG, "Connected successfully. Streams initialized.")
+            } else {
+                result.success(false) // Connection failed
+                // Log.e(TAG, "Connection failed. Socket is null.")
+            }
+        } else {
+            result.success(true) // Already connected
         }
-      }
-    }else if (call.method == "writebytes") {
+    }
+}
+else if (call.method == "writebytes") {
       var lista: List<Int> = call.arguments as List<Int>
       var bytes: ByteArray = "\n".toByteArray()
 
