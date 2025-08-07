@@ -121,7 +121,7 @@ class PrintBluetoothThermal {
 
   static Future<bool> readBytes() async {
     try {
-      final result = await _channel.invokeMethod('readBytes');
+      final result = await _channel.invokeMethod('readbytes');
       return result == true;
     } on PlatformException catch (e) {
       print("Failed to read bytes: '${e.message}'.");
