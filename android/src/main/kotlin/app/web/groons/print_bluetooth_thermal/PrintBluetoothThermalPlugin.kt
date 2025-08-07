@@ -377,17 +377,17 @@ else if (call.method == "writebytes") {
                 )
                 bluetoothAdapter.cancelDiscovery()
                 bluetoothSocket?.connect()
-                if (bluetoothSocket?.isConnected == true) {
-                    inputStream = bluetoothSocket.inputStream
-                    state = true
-                    Log.d(TAG, "Input stream connected successfully.")
-                } else {
-                    state = false
-                    Log.d(TAG, "Failed to connect input stream: socket not connected.")
-                    bluetoothSocket?.close()
-                }
+               if (bluetoothSocket!!.isConnected) {
+            outputStream = bluetoothSocket!!.outputStream
+            state = true
+            //outputStream.write("\n".toByteArray())
+          }else{
+            state = false
+            Log.d(TAG, "Desconectado: ")
+          }
             } catch (e: Exception) {
                 state = false
+                var code:Int = e.hashCode() 
                 Log.e(TAG, "connectInputStream error: ${e.message}")
                 inputStream?.close()
             }
