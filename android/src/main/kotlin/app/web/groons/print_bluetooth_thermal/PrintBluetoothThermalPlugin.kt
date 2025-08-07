@@ -193,29 +193,30 @@ class PrintBluetoothThermalPlugin: FlutterPlugin, MethodCallHandler{
         result.success(false)
       }
     }else if (call.method == "readbytes") {
-    if (inputStream != null) {
+    val input = inputStream
+    if (input != null) {
         try {
             val buffer = ByteArray(1024)
-            val bytesRead = inputStream?.read(buffer)
+            val bytesRead = input.read(buffer)
 
             if (bytesRead > 0) {
-                val data = buffer.copyOfRange(0, bytesRead)
-                result.success(data.toList()) // Convert ByteArray to List<Int>
-                Log.d(TAG, "Read bytes: ${data.contentToString()}")
+                val data = buffer.copyOfRange(0, bytesRead).toList()
+                result.success(data)
+                Log.d(TAG, "Read bytes: $data")
             } else {
                 result.success(emptyList<Int>())
                 Log.d(TAG, "No bytes read from device.")
             }
+
         } catch (e: Exception) {
-            Log.e(TAG, "Error reading bytes: ${e.message}", e)
-            result.error("READ_ERROR", "Error reading from input stream", null)
+            Log.e(TAG, "Error reading bytes: ${e.localizedMessage}", e)
+            result.error("READ_ERROR", "Error reading from input stream", e.localizedMessage)
         }
     } else {
-        Log.d(TAG, "Input stream is null")
+        Log.e(TAG, "Input stream is null")
         result.error("READ_ERROR", "Input stream is null", null)
     }
-}
-    else if (call.method == "printstring") {
+}else if (call.method == "printstring") {
       var stringllego: String = call.arguments.toString()
       //var lista = stringllego.split("*")
       //println("lista ${lista.toString()}")
