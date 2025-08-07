@@ -7,6 +7,7 @@ import android.app.Application
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
@@ -39,6 +40,7 @@ import java.util.*
 private const val TAG = "====> print: "
 private var outputStream: OutputStream? = null
 private var inputStream: InputStream? = null
+private var bluetoothSocket: BluetoothSocket? = null
 
 private lateinit var mac: String
 //val REQUEST_ENABLE_BT = 2
@@ -143,11 +145,11 @@ class PrintBluetoothThermalPlugin: FlutterPlugin, MethodCallHandler{
       }
       GlobalScope.launch(Dispatchers.Main) {
         if (outputStream == null || inputStream == null) {
-    val socket = connect()  //  Call connect() only once
-    if (socket != null) {
-        outputStream = socket.outputStream
-        inputStream = socket.inputStream
-        result.success(true)
+   bluetoothSocket = connect()
+            if (bluetoothSocket != null) {
+        outputStream = bluetoothSocket?.outputStream
+                inputStream = bluetoothSocket?.inputStream
+                result.success(true) //  Call connect() only once
        // Log.d(TAG, "Connected successfully. OutputStream and InputStream initialized.")
     } else {
         result.success(false)
