@@ -104,18 +104,28 @@ class PrintBluetoothThermal {
   }
 
   /// Read bytes from the connected Bluetooth device
-  static Future<List<int>?> readBytes() async {
-    if (Platform.isWindows) {
-      // Implement if Windows is supported
-      return null;
-    } else {
-      try {
-        final List<dynamic> result = await _channel.invokeMethod('readbytes');
-        return result.cast<int>();
-      } on PlatformException catch (e) {
-        print("Failed to read bytes: '${e.message}'.");
-        return null;
-      }
+  // static Future<List<int>?> readBytes() async {
+  //   if (Platform.isWindows) {
+  //     // Implement if Windows is supported
+  //     return null;
+  //   } else {
+  //     try {
+  //       final List<dynamic> result = await _channel.invokeMethod('readbytes');
+  //       return result.cast<int>();
+  //     } on PlatformException catch (e) {
+  //       print("Failed to read bytes: '${e.message}'.");
+  //       return null;
+  //     }
+  //   }
+  // }
+
+  static Future<bool> readBytes() async {
+    try {
+      final result = await _channel.invokeMethod('readBytes');
+      return result == true;
+    } on PlatformException catch (e) {
+      print("Failed to read bytes: '${e.message}'.");
+      return false;
     }
   }
 

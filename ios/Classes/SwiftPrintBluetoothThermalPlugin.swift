@@ -182,23 +182,21 @@ public class SwiftPrintBluetoothThermalPlugin: NSObject, CBCentralManagerDelegat
             result(false)
         }
 
-      }else if call.method == "readbytes" {
+      }else if call.method == "readBytes" {
     if let characteristic = targetCharacteristic {
-        if characteristic.properties.contains(.notify) {
-            self.connectedPeripheral?.setNotifyValue(true, for: characteristic)
-            result(true) // Will receive data in delegate
-        } else if characteristic.properties.contains(.read) {
-            self.connectedPeripheral?.readValue(for: characteristic)
-            result(true) // Will receive data in delegate
-        } else {
-            print("Characteristic does not support notify or read")
-            result(false)
+        // Enable notify to receive data
+        connectedPeripheral?.setNotifyValue(true, for: characteristic)
+        // Optionally trigger a read if the device supports it
+        if characteristic.properties.contains(.read) {
+            connectedPeripheral?.readValue(for: characteristic)
         }
+        result(true)
     } else {
-        print("No characteristic to read from")
+        print("No target characteristic found for reading.")
         result(false)
     }
 }
+
  else if call.method == "printstring"{
         self.stringprint = call.arguments as! String
         //print("llego a printstring\(self.stringprint)")
