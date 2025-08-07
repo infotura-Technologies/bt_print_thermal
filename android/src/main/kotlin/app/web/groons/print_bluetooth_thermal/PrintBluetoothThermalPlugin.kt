@@ -378,7 +378,7 @@ else if (call.method == "writebytes") {
                 bluetoothAdapter.cancelDiscovery()
                 bluetoothSocket?.connect()
                if (bluetoothSocket!!.isConnected) {
-            outputStream = bluetoothSocket!!.outputStream
+            inputStream = bluetoothSocket!!.inputStream
             state = true
             //outputStream.write("\n".toByteArray())
           }else{
