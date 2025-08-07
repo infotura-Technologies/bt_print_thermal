@@ -33,10 +33,13 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.OutputStream
+import java.io.InputStream
 import java.util.*
 
 private const val TAG = "====> print: "
 private var outputStream: OutputStream? = null
+private var inputStream: InputStream? = null
+
 private lateinit var mac: String
 //val REQUEST_ENABLE_BT = 2
 
@@ -111,16 +114,24 @@ class PrintBluetoothThermalPlugin: FlutterPlugin, MethodCallHandler{
       }
       result.success(state)
     }else if (call.method == "connectionstatus") {
-      if(outputStream != null) {
+      if(outputStream != null ) {
         try{
           outputStream?.run {
             write(" ".toByteArray())
             result.success(true)
             //Log.d(TAG, "paso yes coexion ")
           }
+ if(inputStream != null ){
+           if (inputStream?.available() ?: 0 >= 0) {
+                result.success(true)
+            } else {
+                result.success(false)
+            }
+ }
         }catch (e: Exception){
           result.success(false)
           outputStream = null
+          inputStream = null
           //mensajeToast("Dispositivo fue desconectado, reconecte")
           //Log.d(TAG, "state print: ${e.message}")
         }
@@ -185,7 +196,7 @@ class PrintBluetoothThermalPlugin: FlutterPlugin, MethodCallHandler{
     if (inputStream != null) {
         try {
             val buffer = ByteArray(1024)
-            val bytesRead = inputStream!!.read(buffer)
+            val bytesRead = inputStream?.read(buffer)
 
             if (bytesRead > 0) {
                 val data = buffer.copyOfRange(0, bytesRead)
