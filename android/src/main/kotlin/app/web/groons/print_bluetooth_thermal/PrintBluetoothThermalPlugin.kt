@@ -136,10 +136,9 @@ class PrintBluetoothThermalPlugin: FlutterPlugin, MethodCallHandler{
         //Log.d(TAG, "no paso es false ")
       }
     } else if (call.method == "connect") {
-    val macimpresora = call.arguments.toString()
-
-    if (macimpresora.isNotEmpty()) {
-        mac = macimpresora
+    val macAddress = call.arguments.toString()
+    if (macAddress.isNotEmpty()) {
+        mac = macAddress
     } else {
         result.success(false)
         return
@@ -147,15 +146,20 @@ class PrintBluetoothThermalPlugin: FlutterPlugin, MethodCallHandler{
 
     GlobalScope.launch(Dispatchers.Main) {
         if (outputStream == null || inputStream == null) {
-            bluetoothSocket = connect()
-            if (bluetoothSocket != null) {
-                outputStream = bluetoothSocket?.outputStream
-                inputStream = bluetoothSocket?.inputStream
-                result.success(true)
-                Log.d(TAG, "Connected successfully.")
-            } else {
+            try {
+                bluetoothSocket = connect()
+                if (bluetoothSocket != null) {
+                    outputStream = bluetoothSocket?.outputStream
+                    inputStream = bluetoothSocket?.inputStream
+                    result.success(true)
+                    Log.d(TAG, "Connected successfully.")
+                } else {
+                    Log.e(TAG, "Connection failed. Socket is null.")
+                    result.success(false)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception while connecting: ${e.message}", e)
                 result.success(false)
-                Log.e(TAG, "Connection failed. Socket is null.")
             }
         } else {
             // Already connected
