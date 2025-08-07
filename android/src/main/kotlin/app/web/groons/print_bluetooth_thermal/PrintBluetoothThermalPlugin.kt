@@ -136,37 +136,47 @@ class PrintBluetoothThermalPlugin: FlutterPlugin, MethodCallHandler{
         //Log.d(TAG, "no paso es false ")
       }
     } else if (call.method == "connect") {
-    val macAddress = call.arguments.toString()
-    if (macAddress.isNotEmpty()) {
-        mac = macAddress
-    } else {
+      var macimpresora = call.arguments.toString();
+      //Log.d(TAG, "coneccting kt: mac: "+macimpresora);
+      if(macimpresora.length>0){
+        mac = macimpresora;
+      }else{
         result.success(false)
-        return
-    }
-
-    GlobalScope.launch(Dispatchers.Main) {
-        if (outputStream == null || inputStream == null) {
-            try {
-                bluetoothSocket = connect()
-                if (bluetoothSocket != null) {
-                    outputStream = bluetoothSocket?.outputStream
-                    inputStream = bluetoothSocket?.inputStream
-                    result.success(true)
-                    Log.d(TAG, "Connected successfully.")
-                } else {
-                    Log.e(TAG, "Connection failed. Socket is null.")
-                    result.success(false)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Exception while connecting: ${e.message}", e)
-                result.success(false)
-            }
-        } else {
-            // Already connected
-            result.success(true)
+      }
+      GlobalScope.launch(Dispatchers.Main) {
+        if(outputStream == null) {
+          outputStream = connect()?.also {
+            //Log.d(TAG, "connected kt")
+            //result.success("true")
+            //Toast.makeText(this@MainActivity, "Impresora conectada", Toast.LENGTH_SHORT).show()
+          }.apply {
+            result.success(state)
+            //Log.d(TAG, "finalizo tk: conexion state:$state")
+          }
+        }else{
+          //Log.d(TAG, "stream null kt: ")
+          outputStream == null;
+          result.success(false)
         }
+
+        if(inputStream == null) {
+          inputStream = connectInputStream()?.also {
+            //Log.d(TAG, "connected kt")
+            //result.success("true")
+            //Toast.makeText(this@MainActivity, "Impresora conectada", Toast.LENGTH_SHORT).show()
+          }.apply {
+            result.success(state)
+            //Log.d(TAG, "finalizo tk: conexion state:$state")
+          }
+        }else{
+          //Log.d(TAG, "stream null kt: ")
+          inputStream == null;
+          result.success(false)
+        }
+
+      }
     }
-}else if (call.method == "writebytes") {
+else if (call.method == "writebytes") {
       var lista: List<Int> = call.arguments as List<Int>
       var bytes: ByteArray = "\n".toByteArray()
 
@@ -352,6 +362,43 @@ class PrintBluetoothThermalPlugin: FlutterPlugin, MethodCallHandler{
       outputStream
     }
   }
+
+  private suspend fun connectInputStream(): InputStream? {
+    state = false
+    return withContext(Dispatchers.IO) {
+        var inputStream: InputStream? = null
+        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        if (bluetoothAdapter != null && bluetoothAdapter.isEnabled) {
+            try {
+                val bluetoothAddress = mac
+                val bluetoothDevice = bluetoothAdapter.getRemoteDevice(bluetoothAddress)
+                val bluetoothSocket = bluetoothDevice?.createRfcommSocketToServiceRecord(
+                    UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+                )
+                bluetoothAdapter.cancelDiscovery()
+                bluetoothSocket?.connect()
+                if (bluetoothSocket?.isConnected == true) {
+                    inputStream = bluetoothSocket.inputStream
+                    state = true
+                    Log.d(TAG, "Input stream connected successfully.")
+                } else {
+                    state = false
+                    Log.d(TAG, "Failed to connect input stream: socket not connected.")
+                    bluetoothSocket?.close()
+                }
+            } catch (e: Exception) {
+                state = false
+                Log.e(TAG, "connectInputStream error: ${e.message}")
+                inputStream?.close()
+            }
+        } else {
+            state = false
+            Log.e(TAG, "Bluetooth adapter not available or not enabled.")
+        }
+        inputStream
+    }
+}
+
 
   private fun disconncet(){
     outputStream?.close()
