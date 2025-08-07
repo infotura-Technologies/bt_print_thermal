@@ -151,18 +151,18 @@ class PrintBluetoothThermalPlugin: FlutterPlugin, MethodCallHandler{
             if (bluetoothSocket != null) {
                 outputStream = bluetoothSocket?.outputStream
                 inputStream = bluetoothSocket?.inputStream
-                result.success(true) // Connected successfully
-                // Log.d(TAG, "Connected successfully. Streams initialized.")
+                result.success(true)
+                Log.d(TAG, "Connected successfully.")
             } else {
-                result.success(false) // Connection failed
-                // Log.e(TAG, "Connection failed. Socket is null.")
+                result.success(false)
+                Log.e(TAG, "Connection failed. Socket is null.")
             }
         } else {
-            result.success(true) // Already connected
+            // Already connected
+            result.success(true)
         }
     }
-}
-else if (call.method == "writebytes") {
+}else if (call.method == "writebytes") {
       var lista: List<Int> = call.arguments as List<Int>
       var bytes: ByteArray = "\n".toByteArray()
 
