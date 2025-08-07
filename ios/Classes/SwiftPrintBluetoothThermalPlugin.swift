@@ -25,6 +25,7 @@ public class SwiftPrintBluetoothThermalPlugin: NSObject, CBCentralManagerDelegat
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "groons.web.app/print", binaryMessenger: registrar.messenger())
     let instance = SwiftPrintBluetoothThermalPlugin()
+     SwiftPrintBluetoothThermalPlugin.channel = channel 
     registrar.addMethodCallDelegate(instance, channel: channel)
   }
 
@@ -181,7 +182,24 @@ public class SwiftPrintBluetoothThermalPlugin: NSObject, CBCentralManagerDelegat
             result(false)
         }
 
-      } else if call.method == "printstring"{
+      }else if call.method == "readbytes" {
+    if let characteristic = targetCharacteristic {
+        if characteristic.properties.contains(.notify) {
+            self.connectedPeripheral?.setNotifyValue(true, for: characteristic)
+            result(true) // Will receive data in delegate
+        } else if characteristic.properties.contains(.read) {
+            self.connectedPeripheral?.readValue(for: characteristic)
+            result(true) // Will receive data in delegate
+        } else {
+            print("Characteristic does not support notify or read")
+            result(false)
+        }
+    } else {
+        print("No characteristic to read from")
+        result(false)
+    }
+}
+ else if call.method == "printstring"{
         self.stringprint = call.arguments as! String
         //print("llego a printstring\(self.stringprint)")
         if let characteristic = targetCharacteristic {
@@ -292,38 +310,79 @@ public class SwiftPrintBluetoothThermalPlugin: NSObject, CBCentralManagerDelegat
                }
            }
     }
+//OLD
+    // // Implementación del método peripheral(_:didDiscoverCharacteristicsFor:error:) para buscar las caracteristicas del dispositivo bluetooth
+    // public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+    //     if let error = error {
+    //         print("Error discovering characteristics: \(error.localizedDescription)")
+    //         return
+    //     }
 
-    // Implementación del método peripheral(_:didDiscoverCharacteristicsFor:error:) para buscar las caracteristicas del dispositivo bluetooth
+    //     if let discoveredCharacteristics = service.characteristics {
+    //         for characteristic in discoveredCharacteristics {
+    //             //print("characteristics found: \(characteristic.uuid)")
+    //             if let characteristic = targetCharacteristic {
+    //                 if characteristic.properties.contains(.write) {
+    //                     // La característica admite escritura
+    //                     print("characteristics found: \(characteristic.uuid) La característica admite escritura")
+    //                 } else {
+    //                     // La característica no admite escritura
+    //                     print("characteristics found: \(characteristic.uuid) La característica no admite escritura")
+    //                 }
+    //             }
+
+    //             let targetCharacteristicUUID = CBUUID(string: "00001101-0000-1000-8000-00805F9B34FB")
+    //             let targetCharacteristicUUID2 =  CBUUID(string: "49535343-8841-43F4-A8D4-ECBE34729BB3")
+
+    //             if characteristic.uuid == targetCharacteristicUUID || characteristic.uuid == targetCharacteristicUUID2 {
+    //                 targetCharacteristic = characteristic // Guarda la característica objetivo en la variable global
+    //                 print("Target characteristic found: \(characteristic.uuid)")
+    //                 break
+    //             }
+    //         }
+    //     }
+    // }
+
+//NEW
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        if let error = error {
-            print("Error discovering characteristics: \(error.localizedDescription)")
-            return
-        }
+    if let error = error {
+        print("Error discovering characteristics: \(error.localizedDescription)")
+        return
+    }
 
-        if let discoveredCharacteristics = service.characteristics {
-            for characteristic in discoveredCharacteristics {
-                //print("characteristics found: \(characteristic.uuid)")
-                if let characteristic = targetCharacteristic {
-                    if characteristic.properties.contains(.write) {
-                        // La característica admite escritura
-                        print("characteristics found: \(characteristic.uuid) La característica admite escritura")
-                    } else {
-                        // La característica no admite escritura
-                        print("characteristics found: \(characteristic.uuid) La característica no admite escritura")
-                    }
+    if let discoveredCharacteristics = service.characteristics {
+        for characteristic in discoveredCharacteristics {
+            let targetCharacteristicUUID = CBUUID(string: "00001101-0000-1000-8000-00805F9B34FB")
+            let targetCharacteristicUUID2 = CBUUID(string: "49535343-8841-43F4-A8D4-ECBE34729BB3")
+
+            if characteristic.uuid == targetCharacteristicUUID || characteristic.uuid == targetCharacteristicUUID2 {
+                targetCharacteristic = characteristic
+                print("Target characteristic found: \(characteristic.uuid)")
+
+                if characteristic.properties.contains(.write) {
+                    print("Characteristic supports write")
+                } else {
+                    print("Characteristic does NOT support write")
                 }
 
-                let targetCharacteristicUUID = CBUUID(string: "00001101-0000-1000-8000-00805F9B34FB")
-                let targetCharacteristicUUID2 =  CBUUID(string: "49535343-8841-43F4-A8D4-ECBE34729BB3")
-
-                if characteristic.uuid == targetCharacteristicUUID || characteristic.uuid == targetCharacteristicUUID2 {
-                    targetCharacteristic = characteristic // Guarda la característica objetivo en la variable global
-                    print("Target characteristic found: \(characteristic.uuid)")
-                    break
+                //  Enable notify if supported
+                if characteristic.properties.contains(.notify) {
+                    peripheral.setNotifyValue(true, for: characteristic)
+                    print("Notification enabled on: \(characteristic.uuid)")
                 }
+
+                //  Trigger one-time read if supported
+                if characteristic.properties.contains(.read) {
+                    peripheral.readValue(for: characteristic)
+                    print("Read request sent for: \(characteristic.uuid)")
+                }
+
+                break
             }
         }
     }
+}
+
 
     // Implementación del método peripheral(_:didWriteValueFor:error:) para saber si la impresion fue exitosa si se pasa .withResponse
     public func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
@@ -336,6 +395,23 @@ public class SwiftPrintBluetoothThermalPlugin: NSObject, CBCentralManagerDelegat
         print("Escritura exitosa en la característica: \(characteristic.uuid)")
         // Aquí puedes realizar operaciones adicionales con la respuesta de la escritura
     }
+
+//Handle incoming data from peripheral
+    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+    if let error = error {
+        print("Error reading value: \(error.localizedDescription)")
+        return
+    }
+
+    if let data = characteristic.value {
+        let byteArray = [UInt8](data)
+        print("Received bytes: \(byteArray)")
+        
+        // Send to Flutter if needed
+        SwiftPrintBluetoothThermalPlugin.channel?.invokeMethod("onBytesReceived", arguments: byteArray)
+    }
+}
+
     
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch central.state {

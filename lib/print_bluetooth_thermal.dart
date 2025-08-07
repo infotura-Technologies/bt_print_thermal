@@ -7,47 +7,6 @@ class PrintBluetoothThermal {
   static const MethodChannel _channel =
       const MethodChannel('groons.web.app/print');
 
-  // NEW: Stream controller and stream for reading weight data
-  static final StreamController<String> _dataStreamController =
-      StreamController<String>.broadcast();
-
-  /// Stream to listen for weight data
-  static Stream<String> get weightStream => _dataStreamController.stream;
-
-  static bool _isWeightListeningStarted = false;
-
-  /// Start listening to Bluetooth data from the weighing machine
-  /// Returns true if listener was successfully started, false otherwise
-  static Future<bool> startListeningToWeight() async {
-    if (_isWeightListeningStarted) return true; // Already started
-
-    if (!(Platform.isAndroid || Platform.isIOS)) {
-      print("startListeningToWeight is only supported on Android/iOS");
-      return false;
-    }
-
-    try {
-      _channel.setMethodCallHandler((call) async {
-        if (call.method == 'onDataReceived') {
-          try {
-            final Uint8List data = call.arguments;
-            final String raw = String.fromCharCodes(data).trim();
-
-            _dataStreamController.add(raw);
-          } catch (e) {
-            print("Error parsing weight data: $e");
-          }
-        }
-      });
-
-      _isWeightListeningStarted = true;
-      return true;
-    } catch (e) {
-      print("Failed to start listening to weight: $e");
-      return false;
-    }
-  }
-
   ///Check if it is allowed on Android 12 access to Bluetooth onwards
   static Future<bool> get isPermissionBluetoothGranted async {
     //bluetooth esta disponible?
@@ -142,6 +101,22 @@ class PrintBluetoothThermal {
       }
     }
     return result;
+  }
+
+  /// Read bytes from the connected Bluetooth device
+  static Future<List<int>?> readBytes() async {
+    if (Platform.isWindows) {
+      // Implement if Windows is supported
+      return null;
+    } else {
+      try {
+        final List<dynamic> result = await _channel.invokeMethod('readbytes');
+        return result.cast<int>();
+      } on PlatformException catch (e) {
+        print("Failed to read bytes: '${e.message}'.");
+        return null;
+      }
+    }
   }
 
   ///send bytes to print, esc_pos_utils_plus package must be used, returns true if successful
