@@ -121,17 +121,11 @@ class PrintBluetoothThermalPlugin: FlutterPlugin, MethodCallHandler{
             result.success(true)
             //Log.d(TAG, "paso yes coexion ")
           }
- if(inputStream != null ){
-           if (inputStream?.available() ?: 0 >= 0) {
-                result.success(true)
-            } else {
-                result.success(false)
-            }
- }
+
         }catch (e: Exception){
           result.success(false)
           outputStream = null
-          inputStream = null
+         
           //mensajeToast("Dispositivo fue desconectado, reconecte")
           //Log.d(TAG, "state print: ${e.message}")
         }
@@ -148,16 +142,21 @@ class PrintBluetoothThermalPlugin: FlutterPlugin, MethodCallHandler{
         result.success(false)
       }
       GlobalScope.launch(Dispatchers.Main) {
-        if(outputStream == null) {
-          outputStream = connect()?.also {
-            //Log.d(TAG, "connected kt")
-            //result.success("true")
-            //Toast.makeText(this@MainActivity, "Impresora conectada", Toast.LENGTH_SHORT).show()
-          }.apply {
-            result.success(state)
-            //Log.d(TAG, "finalizo tk: conexion state:$state")
-          }
-        }else{
+        if (outputStream == null || inputStream == null) {
+    val socket = connect()  //  Call connect() only once
+    if (socket != null) {
+        outputStream = socket.outputStream
+        inputStream = socket.inputStream
+        result.success(true)
+       // Log.d(TAG, "Connected successfully. OutputStream and InputStream initialized.")
+    } else {
+        result.success(false)
+       // Log.e(TAG, "Connection failed. Socket is null.")
+    }
+} else {
+    result.success(true)  // Already connected
+}
+else{
           //Log.d(TAG, "stream null kt: ")
           outputStream == null;
           result.success(false)
