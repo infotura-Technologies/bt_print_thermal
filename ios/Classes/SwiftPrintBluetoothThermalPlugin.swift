@@ -182,7 +182,7 @@ public class SwiftPrintBluetoothThermalPlugin: NSObject, CBCentralManagerDelegat
             result(false)
         }
 
-      }else if call.method == "readBytes" {
+      }else if call.method == "readbytes" {
     if let characteristic = targetCharacteristic {
         // Enable notify to receive data
         connectedPeripheral?.setNotifyValue(true, for: characteristic)
